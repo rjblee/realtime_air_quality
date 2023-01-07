@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +27,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Current Air Quality'),
     );
   }
 }
@@ -48,16 +51,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  int currentAirQuality = 0;
+  String currentCity = '';
+  String currentCountry = '';
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getAirQuality();
+  }
+
+  void getAirQuality() async {
+    var response =
+        await http.get(Uri.parse('http://api.airvisual.com/v2/nearest_city?key=83843a82-a898-4a18-8879-4fc5ae847189'));
+    print(jsonDecode(response.body));
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      currentAirQuality = jsonDecode(response.body)['data']['current']['pollution']['aqius'];
+      currentCity = jsonDecode(response.body)['data']['city'];
+      currentCountry = jsonDecode(response.body)['data']['country'];
     });
   }
 
@@ -95,20 +107,27 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text(
+              '$currentCity, $currentCountry',
+              style: Theme.of(context).textTheme.headline5,
+            ),
+            const SizedBox(height: 20),
             const Text(
-              'You have pushed the button this many times:',
+              'Your current air quality is: ',
             ),
             Text(
-              '$_counter',
+              '$currentAirQuality',
               style: Theme.of(context).textTheme.headline4,
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: () {
+          getAirQuality();
+        },
+        tooltip: 'Refresh',
+        child: const Icon(Icons.refresh),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
